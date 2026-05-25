@@ -49,8 +49,11 @@ from telegram_bot.messages import (
     MENU_HISTORY,
     MENU_MANUAL_PRODUCTS,
     MENU_PRODUCTS,
+    MENU_SALDO_BACK,
     MENU_TOP_BUYER,
     MENU_TOPUP,
+    MENU_TOPUP_MANUAL,
+    MENU_TOPUP_QRIS,
     StartProfile,
     admin_bank_add_message,
     admin_bank_delete_message,
@@ -89,6 +92,8 @@ from telegram_bot.messages import (
     ping_message,
     start_message,
     topup_guide_message,
+    topup_qris_message,
+    saldo_menu_message,
     invoice_message,
     payment_loading_steps,
 )
@@ -164,13 +169,15 @@ CHECKOUT_EXPIRY_MINUTES = 10
 
 # ── Keyboard builders ─────────────────────────────────────────────────────────
 
-def _build_main_keyboard(balance: int) -> ReplyKeyboardMarkup:
+def _build_main_keyboard(balance: int, bonus_claimed: bool = False) -> ReplyKeyboardMarkup:
+    rows = [
+        [balance_menu_label(balance)],
+        [MENU_PRODUCTS, MENU_HISTORY],
+    ]
+    if not bonus_claimed:
+        rows.append([MENU_DAILY_BONUS])
     return ReplyKeyboardMarkup(
-        [
-            [MENU_PRODUCTS, MENU_HISTORY],
-            [balance_menu_label(balance), MENU_TOP_BUYER],
-            [MENU_TOPUP, MENU_DAILY_BONUS],
-        ],
+        rows,
         resize_keyboard=True,
         one_time_keyboard=False,
     )
@@ -184,6 +191,19 @@ def _build_admin_keyboard() -> ReplyKeyboardMarkup:
             [MENU_ADMIN_DEL_PRODUCT, MENU_ADMIN_BANKS],
             [MENU_ADMIN_TOPUP_REQUESTS, MENU_ADMIN_LOGS],
             [MENU_ADMIN_BACK],
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=False,
+    )
+
+
+def _build_saldo_keyboard() -> ReplyKeyboardMarkup:
+    """Keyboard sub-menu Saldo: Top Up Manual, Top Up Otomatis (QRIS), Kembali."""
+    return ReplyKeyboardMarkup(
+        [
+            [MENU_TOPUP_MANUAL],
+            [MENU_TOPUP_QRIS],
+            [MENU_SALDO_BACK],
         ],
         resize_keyboard=True,
         one_time_keyboard=False,
@@ -450,7 +470,7 @@ async def product_callback_handler(update, context) -> None:
                     chat_id=user.id,
                     text=f"Saldo kamu sekarang: <b>{format_rupiah(info.new_balance)}</b>",
                     parse_mode="HTML",
-                    reply_markup=_build_main_keyboard(info.new_balance),
+                    reply_markup=_build_main_keyboard(info.new_balance, bonus_claimed=True),
                 )
             except Exception:
                 pass
@@ -912,7 +932,8 @@ async def render_home(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             current_time=datetime.now(),
         )
     )
-    keyboard = _build_main_keyboard(profile.balance)
+    bonus_info = get_daily_bonus_status(user.id)
+    keyboard = _build_main_keyboard(profile.balance, bonus_claimed=bonus_info.already_claimed)
     settings = context.application.bot_data["settings"]
 
     if settings.banner_path.exists():
@@ -1849,9 +1870,12 @@ async def _handle_user_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, 
         )
         info = get_daily_bonus_status(user.id)
         if info.already_claimed:
+            profile = get_user_profile(user.id)
+            bal = profile.balance if profile else 0
             await message.reply_text(
                 daily_bonus_overview_message(info),
                 parse_mode="HTML",
+                reply_markup=_build_main_keyboard(bal, bonus_claimed=True),
             )
         else:
             await message.reply_text(
@@ -1864,13 +1888,41 @@ async def _handle_user_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, 
     if text == MENU_TOPUP or text.startswith("Saldo: "):
         profile = get_user_profile(user.id)
         bal = profile.balance if profile else 0
+        await message.reply_text(
+            saldo_menu_message(bal),
+            parse_mode="HTML",
+            reply_markup=_build_saldo_keyboard(),
+        )
+        return True
+
+    if text == MENU_TOPUP_MANUAL:
+        profile = get_user_profile(user.id)
+        bal = profile.balance if profile else 0
         context.user_data[USER_STATE_KEY] = USER_STATE_TOPUP
         active_banks = list_banks(active_only=True)
         await message.reply_text(
-            f"💳 Saldo kamu saat ini: <b>{format_rupiah(bal)}</b>\n\n"
-            + topup_guide_message(active_banks),
+            topup_guide_message(active_banks),
             parse_mode="HTML",
-            reply_markup=_build_main_keyboard(bal),
+            reply_markup=_build_saldo_keyboard(),
+        )
+        return True
+
+    if text == MENU_TOPUP_QRIS:
+        await message.reply_text(
+            topup_qris_message(),
+            parse_mode="HTML",
+            reply_markup=_build_saldo_keyboard(),
+        )
+        return True
+
+    if text == MENU_SALDO_BACK:
+        bonus_info = get_daily_bonus_status(user.id)
+        profile = get_user_profile(user.id)
+        bal = profile.balance if profile else 0
+        context.user_data[USER_STATE_KEY] = None
+        await message.reply_text(
+            "Kembali ke menu utama.",
+            reply_markup=_build_main_keyboard(bal, bonus_claimed=bonus_info.already_claimed),
         )
         return True
 
