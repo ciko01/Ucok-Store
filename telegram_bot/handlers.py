@@ -173,6 +173,7 @@ def _build_main_keyboard(balance: int, bonus_claimed: bool = False) -> ReplyKeyb
     rows = [
         [balance_menu_label(balance)],
         [MENU_PRODUCTS, MENU_HISTORY],
+        [MENU_TOP_BUYER],
     ]
     if not bonus_claimed:
         rows.append([MENU_DAILY_BONUS])
