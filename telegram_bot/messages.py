@@ -11,6 +11,9 @@ MENU_MANUAL_PRODUCTS = "Produk Manual"
 MENU_BACK = "< Back"
 MENU_TOPUP = "Top Up Saldo"
 MENU_DAILY_BONUS = "🎁 Bonus Harian"
+MENU_TOPUP_MANUAL = "💳 Top Up Manual"
+MENU_TOPUP_QRIS = "📱 Top Up Otomatis (QRIS)"
+MENU_SALDO_BACK = "← Kembali"
 MENU_ADMIN_ADD_PRODUCT = "Tambah Produk"
 MENU_ADMIN_UPLOAD_STOCK = "Upload Stok"
 MENU_ADMIN_LIST_PRODUCTS = "Lihat Produk"
@@ -267,6 +270,27 @@ def topup_guide_message(banks: list[object] | None = None) -> str:
         "   Contoh: <code>topup 50000</code>\n\n"
         "3️⃣ Admin verifikasi → saldo otomatis masuk ✅\n\n"
         "⚠️ Minimal top up: <b>Rp 10.000</b>"
+    )
+
+
+def saldo_menu_message(balance: int) -> str:
+    """Pesan ketika user klik tombol Saldo — tampilkan info saldo + pilihan top up."""
+    return (
+        f"━━━ 💰 <b>Info Saldo</b> ━━━\n\n"
+        f"💳 Saldo kamu saat ini:\n"
+        f"<b>{format_rupiah(balance)}</b>\n\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"Pilih metode top up di bawah ini 👇"
+    )
+
+
+def topup_qris_message() -> str:
+    """Pesan untuk top up otomatis via QRIS (placeholder)."""
+    return (
+        "━━━ 📱 <b>Top Up Otomatis (QRIS)</b> ━━━\n\n"
+        "🚧 <b>Fitur ini sedang dalam pengembangan.</b>\n\n"
+        "Silakan gunakan <b>Top Up Manual</b> untuk saat ini.\n\n"
+        "Fitur QRIS akan segera tersedia! 🙏"
     )
 
 
