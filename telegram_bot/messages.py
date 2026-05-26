@@ -67,20 +67,21 @@ def format_indonesian_datetime(value: datetime) -> str:
 
 def start_message(profile: StartProfile) -> str:
     username_line = f"@{profile.username}" if profile.username else "-"
+
     return (
-        f"╔══════════════════════╗\n"
-        f"║   🛒 <b>UCOK STORE</b>         ║\n"
-        f"╚══════════════════════╝\n\n"
-        f"👋 Halo, <b>{profile.full_name}</b>!\n"
-        f"🕐 {format_indonesian_datetime(profile.current_time)}\n\n"
-        f"━━━ 👤 <b>Profil Kamu</b> ━━━\n"
-        f"🪪 ID        : <code>{profile.user_id}</code>\n"
-        f"📛 Username  : {username_line}\n"
-        f"💰 Saldo     : <b>{format_rupiah(profile.balance)}</b>\n\n"
-        f"━━━ 📊 <b>Statistik Bot</b> ━━━\n"
+        f"👋 Halo, <b>{profile.full_name}</b>, Selamat datang di Ucok Store\n"
+        f"🕒 {format_indonesian_datetime(profile.current_time)}\n\n"
+
+        f"──── 👤 <b>Profil Kamu</b> ────\n"
+        f"🪪 ID         : <code>{profile.user_id}</code>\n"
+        f"📛 Username   : {username_line}\n"
+        f"💰 Saldo      : <b>{format_rupiah(profile.balance)}</b>\n\n"
+
+        f"──── 📊 <b>Statistik Bot</b> ────\n"
         f"👥 Total User       : {profile.total_users}\n"
         f"💳 Total Transaksi  : {profile.total_transactions}\n\n"
-        f"Pilih menu di bawah untuk mulai belanja! 👇"
+
+        f"👇 Pilih menu di bawah untuk mulai belanja!"
     )
 
 
@@ -122,9 +123,9 @@ def echo_message(text: str) -> str:
 def menu_message(menu_text: str) -> str:
     if menu_text == MENU_PRODUCTS:
         return (
-            "📦 <b>Pilih Kategori Produk</b>\n\n"
+            "📦 Pilih Kategori Produk\n\n"
             "Gunakan tombol di bawah untuk memilih\n"
-            "<b>Produk Otomatis</b> atau <b>Produk Manual</b>."
+            "Produk Otomatis atau Produk Manual."
         )
     if menu_text == MENU_BACK:
         return "Kembali ke menu utama."
@@ -133,14 +134,14 @@ def menu_message(menu_text: str) -> str:
 
 def admin_welcome_message() -> str:
     return (
-        "🔐 <b>Panel Admin Aktif</b>\n\n"
+        "🔐 Panel Admin Aktif\n\n"
         "Pilih menu di keyboard untuk mengelola\n"
         "produk, stok, dan permintaan top up.\n\n"
         "━━━ Command Admin ━━━\n"
         "/bc — broadcast pesan ke semua user\n"
         "/stats — statistik lengkap\n"
-        "/addbal &lt;uid&gt; &lt;jumlah&gt; — ubah saldo user\n"
-        "/maintenance on &lt;pesan&gt; | off — mode pemeliharaan\n"
+        "/addbal uid_jumlah — ubah saldo user\n"
+        "/maintenance on - pesan | off — mode pemeliharaan\n"
         "/cancel — batalkan operasi aktif"
     )
 
@@ -386,7 +387,7 @@ def invoice_message(
 
     header = (
         f"╔══════════════════════╗\n"
-        f"║  ✅ <b>PEMBAYARAN SUKSES</b>   ║\n"
+        f"  ✅ <b>PEMBAYARAN SUKSES</b>   \n"
         f"╚══════════════════════╝\n"
     )
 
