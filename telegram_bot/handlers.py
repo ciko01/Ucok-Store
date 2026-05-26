@@ -1917,14 +1917,8 @@ async def _handle_user_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, 
         return True
 
     if text == MENU_SALDO_BACK:
-        bonus_info = get_daily_bonus_status(user.id)
-        profile = get_user_profile(user.id)
-        bal = profile.balance if profile else 0
         context.user_data[USER_STATE_KEY] = None
-        await message.reply_text(
-            "Kembali ke menu utama.",
-            reply_markup=_build_main_keyboard(bal, bonus_claimed=bonus_info.already_claimed),
-        )
+        await render_home(update, context)
         return True
 
     if text.strip().lower().startswith("topup"):
