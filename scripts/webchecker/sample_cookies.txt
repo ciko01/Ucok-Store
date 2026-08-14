@@ -1,0 +1,11 @@
+# Netflix Cookie Sample - Netscape Format
+# Format: domain	flag	path	secure	expiration	name	value
+
+.netflix.com	TRUE	/	TRUE	1735689600	NetflixId	v%3D2%26mac%3DAQEAEQABABRwiI
+.netflix.com	TRUE	/	TRUE	1735689600	SecureNetflixId	v%3D2%26mac%3DAQEAEQABABRwiI
+.netflix.com	TRUE	/	TRUE	1735689600	nfvdid	BQFmAAEBEGTxample123456
+
+# Cookie 2
+.netflix.com	TRUE	/	TRUE	1735689600	NetflixId	v%3D2%26mac%3DAQEAEQABABRwiJ
+.netflix.com	TRUE	/	TRUE	1735689600	SecureNetflixId	v%3D2%26mac%3DAQEAEQABABRwiJ
+.netflix.com	TRUE	/	TRUE	1735689600	nfvdid	BQFmAAEBEGTxample123457

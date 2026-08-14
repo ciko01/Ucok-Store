@@ -1,0 +1,13 @@
+# Proxy Configuration
+# Format yang didukung:
+# 1. host:port
+# 2. user:pass:host:port
+# 3. http://user:pass@host:port
+# 4. socks5://user:pass@host:port
+#
+# Contoh:
+# 192.168.1.1:8080
+# user:password:192.168.1.1:8080
+# http://user:password@proxy.example.com:8080
+
+# Tambahkan proxy Anda di bawah ini (satu proxy per baris)

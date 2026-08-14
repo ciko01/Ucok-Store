@@ -1,0 +1,1073 @@
+﻿
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Netflix Cookie Checker</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --red: #E50914;
+  --dark: #0a0a0a;
+  --card: #141414;
+  --card2: #1c1c1c;
+  --border: rgba(255,255,255,0.08);
+  --text: #e5e5e5;
+  --muted: #666;
+}
+body {
+  background: var(--dark);
+  color: var(--text);
+  font-family: "Segoe UI", sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: #111; }
+::-webkit-scrollbar-thumb { background: var(--red); border-radius: 3px; }
+.hidden { display: none !important; }
+
+/* NAVBAR */
+.navbar {
+  background: rgba(0,0,0,0.96);
+  border-bottom: 1px solid var(--border);
+  padding: .65rem 1.5rem;
+  display: flex;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  backdrop-filter: blur(20px);
+}
+.brand { font-size: 1.3rem; font-weight: 900; color: var(--red); letter-spacing: -.5px; margin-right: 2rem; }
+.brand span { color: #fff; }
+.nav-tabs-wrap { display: flex; gap: 2px; }
+.nav-tab {
+  padding: .45rem 1.1rem;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--muted);
+  border: none;
+  background: none;
+  transition: all .2s;
+}
+.nav-tab:hover { color: var(--text); background: rgba(255,255,255,.05); }
+.nav-tab.active { color: #fff; background: rgba(229,9,20,.15); }
+.ws-badge {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: .75rem;
+  color: var(--muted);
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+}
+.ws-dot { width: 6px; height: 6px; border-radius: 50%; background: #333; transition: all .3s; }
+.ws-dot.on { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+
+/* PAGE */
+.page { display: none; padding: 1.2rem; max-width: 1600px; margin: 0 auto; }
+.page.active { display: block; }
+
+/* PANEL */
+.panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.panel-head {
+  padding: .75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+}
+.panel-head i { color: var(--red); }
+.panel-body { padding: 1rem; }
+
+/* LABEL */
+.lbl { font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: .35rem; }
+
+/* TEXTAREA COOKIE INPUT */
+.cookie-input {
+  width: 100%;
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: .78rem;
+  padding: .75rem;
+  height: 110px;
+  resize: none;
+  font-family: monospace;
+  transition: border-color .2s;
+  display: block;
+}
+.cookie-input:focus { outline: none; border-color: rgba(229,9,20,.5); }
+.cookie-input::placeholder { color: #444; }
+
+/* UPLOAD DROP */
+.upload-drop {
+  border: 2px dashed rgba(229,9,20,.25);
+  border-radius: 8px;
+  padding: .65rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+}
+.upload-drop:hover, .upload-drop.drag { border-color: var(--red); background: rgba(229,9,20,.05); }
+.upload-drop i { font-size: 1rem; color: var(--red); display: block; margin-bottom: .15rem; }
+.upload-drop p { font-size: .72rem; color: var(--muted); margin: 0; }
+.file-name { font-size: .72rem; color: #22c55e; margin-top: .3rem; display: none; }
+
+/* CHECK BUTTON - always visible */
+.btn-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  background: var(--red);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: .8rem;
+  font-size: .9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .25s;
+}
+.btn-check:hover { background: #c40812; box-shadow: 0 4px 16px rgba(229,9,20,.35); }
+.btn-check:disabled { opacity: .45; cursor: not-allowed; }
+
+
+/* THREE-COL LAYOUT */
+.three-col {
+  display: grid;
+  grid-template-columns: 300px 1fr 340px;
+  gap: 1rem;
+  align-items: start;
+}
+.col-left {
+  position: sticky;
+  top: 70px;
+}
+
+/* STATUS BAR */
+.status-bar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: .6rem;
+  margin-bottom: 1rem;
+}
+.stat {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: .85rem .5rem;
+  text-align: center;
+}
+.stat-val { font-size: 1.5rem; font-weight: 800; line-height: 1; }
+.stat-lbl { font-size: .58rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-top: .25rem; }
+.s-valid .stat-val { color: #22c55e; }
+.s-invalid .stat-val { color: #ef4444; }
+.s-broken .stat-val { color: #f59e0b; }
+.s-onhold .stat-val { color: #8b5cf6; }
+.s-free .stat-val { color: #3b82f6; }
+.s-dup .stat-val { color: #ec4899; }
+.s-total .stat-val { color: #fff; }
+
+/* PLAN COUNTS */
+.plan-counts {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: .5rem;
+  margin-bottom: 1rem;
+}
+.plan-count {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: .6rem .4rem;
+  text-align: center;
+}
+.plan-count-val { font-size: 1.1rem; font-weight: 800; }
+.plan-count-lbl { font-size: .58rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-top: .2rem; }
+.pc-premium .plan-count-val { color: #fbbf24; }
+.pc-standard .plan-count-val { color: #60a5fa; }
+.pc-basic .plan-count-val { color: #4ade80; }
+.pc-mobile .plan-count-val { color: #f472b6; }
+.pc-free .plan-count-val { color: #9ca3af; }
+
+/* RESULT AREA (middle bottom) */
+.result-area {
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.5rem;
+  text-align: center;
+  min-height: 80px;
+}
+.result-area-empty { color: var(--muted); font-size: .85rem; }
+
+/* DETAIL ROWS */
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: .45rem 0;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  font-size: .82rem;
+  gap: 1rem;
+}
+.detail-row:last-child { border-bottom: none; }
+.detail-key { color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+.detail-val { color: var(--text); font-weight: 500; text-align: right; word-break: break-all; }
+
+/* PLAN CHIPS */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: .2rem .65rem;
+  border-radius: 20px;
+  font-size: .72rem;
+  font-weight: 700;
+}
+.chip-premium { background: rgba(255,215,0,.12); color: #fbbf24; border: 1px solid rgba(255,215,0,.2); }
+.chip-premium_extra { background: rgba(255,165,0,.12); color: #fb923c; border: 1px solid rgba(255,165,0,.2); }
+.chip-standard { background: rgba(59,130,246,.12); color: #60a5fa; border: 1px solid rgba(59,130,246,.2); }
+.chip-standard_with_ads { background: rgba(99,102,241,.12); color: #818cf8; border: 1px solid rgba(99,102,241,.2); }
+.chip-basic { background: rgba(34,197,94,.12); color: #4ade80; border: 1px solid rgba(34,197,94,.2); }
+.chip-mobile { background: rgba(236,72,153,.12); color: #f472b6; border: 1px solid rgba(236,72,153,.2); }
+.chip-free { background: rgba(107,114,128,.12); color: #9ca3af; border: 1px solid rgba(107,114,128,.2); }
+.chip-on_hold { background: rgba(139,92,246,.12); color: #a78bfa; border: 1px solid rgba(139,92,246,.2); }
+
+/* LOGIN BOX */
+.login-box {
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: .75rem;
+  margin-bottom: .75rem;
+}
+.login-box-title { font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: .5rem; }
+.login-link { font-size: .77rem; color: #60a5fa; word-break: break-all; display: flex; align-items: flex-start; gap: .5rem; margin-bottom: .35rem; }
+.login-link:last-child { margin-bottom: 0; }
+.login-link i { flex-shrink: 0; color: var(--muted); margin-top: 2px; }
+.login-link a { color: #60a5fa; text-decoration: none; }
+.login-link a:hover { text-decoration: underline; }
+
+/* COOKIE DISPLAY */
+.cookie-display {
+  background: rgba(0,0,0,.5);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: .75rem;
+  font-family: monospace;
+  font-size: .7rem;
+  color: #999;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 160px;
+  overflow-y: auto;
+}
+.btn-copy {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  width: 100%;
+  background: rgba(255,255,255,.06);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: .6rem;
+  font-size: .8rem;
+  cursor: pointer;
+  transition: all .2s;
+  margin-top: .6rem;
+}
+.btn-copy:hover { background: rgba(229,9,20,.15); border-color: var(--red); }
+
+/* PROGRESS BAR */
+.prog-bar-outer { height: 5px; background: rgba(255,255,255,.07); border-radius: 3px; overflow: hidden; margin: .5rem 0; }
+.prog-bar-inner { height: 100%; background: linear-gradient(90deg, var(--red), #ff4757); border-radius: 3px; transition: width .4s; width: 0; }
+
+/* LOG */
+.log-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: .9rem; height: 260px; display: flex; flex-direction: column; }
+.log-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; padding-right: 2px; }
+.log-item { font-size: .75rem; padding: .3rem .6rem; border-radius: 5px; border-left: 3px solid transparent; background: rgba(255,255,255,.02); display: flex; align-items: center; gap: 7px; }
+.log-item.hit { border-color: #22c55e; color: #86efac; }
+.log-item.fail { border-color: #ef4444; color: #fca5a5; }
+.log-item.brok { border-color: #f59e0b; color: #fcd34d; }
+.log-item.dup { border-color: #8b5cf6; color: #c4b5fd; }
+
+/* TABLE */
+.tbl-wrap { overflow-x: auto; }
+.tbl { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.tbl thead tr { border-bottom: 1px solid var(--border); }
+.tbl th { padding: .6rem .9rem; color: var(--muted); font-size: .67rem; text-transform: uppercase; letter-spacing: 1px; text-align: left; white-space: nowrap; font-weight: 600; }
+.tbl td { padding: .6rem .9rem; border-bottom: 1px solid rgba(255,255,255,.03); vertical-align: middle; }
+.tbl tr:hover td { background: rgba(255,255,255,.02); }
+.act-btns { display: flex; gap: .35rem; }
+.btn-ico { background: rgba(255,255,255,.06); border: 1px solid var(--border); border-radius: 6px; padding: .28rem .5rem; color: var(--text); cursor: pointer; transition: all .2s; font-size: .75rem; }
+.btn-ico:hover { background: var(--red); border-color: var(--red); }
+
+/* FILTER TABS */
+.ftabs { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: .8rem; }
+.ftab { background: rgba(255,255,255,.05); border: 1px solid var(--border); border-radius: 20px; padding: .25rem .8rem; font-size: .75rem; cursor: pointer; transition: all .2s; color: var(--muted); }
+.ftab.active { background: var(--red); border-color: var(--red); color: #fff; }
+
+/* STOP BUTTON */
+.btn-stop { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); color: #ef4444; padding: .4rem 1rem; border-radius: 7px; cursor: pointer; font-size: .8rem; font-weight: 600; transition: all .2s; }
+.btn-stop:hover { background: rgba(239,68,68,.2); }
+.btn-stop:disabled { opacity: .4; cursor: not-allowed; }
+
+/* TOAST */
+.toast-wrap { position: fixed; bottom: 1.5rem; right: 1.5rem; display: flex; flex-direction: column; gap: .5rem; z-index: 9999; pointer-events: none; }
+.toast { background: rgba(15,15,15,.97); border: 1px solid var(--border); border-left: 3px solid #22c55e; border-radius: 10px; padding: .7rem 1rem; min-width: 230px; display: flex; align-items: center; gap: .7rem; box-shadow: 0 8px 30px rgba(0,0,0,.5); pointer-events: all; backdrop-filter: blur(20px); animation: tIn .25s ease; }
+.toast.out { animation: tOut .25s ease forwards; }
+@keyframes tIn { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes tOut { from { opacity: 1; } to { opacity: 0; transform: translateX(12px); } }
+.toast-ico { font-size: 1rem; }
+.toast-title { font-size: .82rem; font-weight: 700; color: #fff; }
+.toast-sub { font-size: .72rem; color: var(--muted); }
+
+/* EMPTY */
+.empty { text-align: center; padding: 2rem; color: var(--muted); font-size: .85rem; }
+.empty i { font-size: 1.8rem; display: block; margin-bottom: .6rem; opacity: .2; }
+
+/* RESPONSIVE */
+@media (max-width: 1100px) { .three-col { grid-template-columns: 280px 1fr 300px; } }
+@media (max-width: 860px) { .three-col { grid-template-columns: 1fr; } .status-bar { grid-template-columns: repeat(4,1fr); } .plan-counts { grid-template-columns: repeat(3,1fr); } }
+@media (max-width: 500px) { .status-bar { grid-template-columns: repeat(2,1fr); } }
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="brand">NETFLIX<span>CHECKER</span></div>
+  <div class="nav-tabs-wrap">
+    <button class="nav-tab active" onclick="switchPage('single',this)">
+      <i class="fas fa-cookie-bite"></i> Single Check
+    </button>
+    <button class="nav-tab" onclick="switchPage('bulk',this)">
+      <i class="fas fa-layer-group"></i> Bulk Check
+    </button>
+  </div>
+  <div class="ws-badge">
+    <div class="ws-dot" id="wsDot"></div>
+    <span id="wsLabel">Offline</span>
+  </div>
+</nav>
+
+<!-- ========== SINGLE CHECK PAGE ========== -->
+<div id="page-single" class="page active">
+
+  <!-- Status bar top -->
+  <div class="status-bar">
+    <div class="stat s-total"><div class="stat-val" id="sc-total">0</div><div class="stat-lbl">Total</div></div>
+    <div class="stat s-valid"><div class="stat-val" id="sc-valid">0</div><div class="stat-lbl">Valid</div></div>
+    <div class="stat s-free"><div class="stat-val" id="sc-free">0</div><div class="stat-lbl">Free</div></div>
+    <div class="stat s-onhold"><div class="stat-val" id="sc-onhold">0</div><div class="stat-lbl">On Hold</div></div>
+    <div class="stat s-broken"><div class="stat-val" id="sc-broken">0</div><div class="stat-lbl">Broken</div></div>
+    <div class="stat s-invalid"><div class="stat-val" id="sc-invalid">0</div><div class="stat-lbl">Invalid</div></div>
+    <div class="stat s-dup"><div class="stat-val" id="sc-err">0</div><div class="stat-lbl">Error</div></div>
+  </div>
+
+  <!-- Plan counts -->
+  <div class="plan-counts">
+    <div class="plan-count pc-premium"><div class="plan-count-val" id="sc-pc-premium">0</div><div class="plan-count-lbl">Premium</div></div>
+    <div class="plan-count pc-standard"><div class="plan-count-val" id="sc-pc-standard">0</div><div class="plan-count-lbl">Standard</div></div>
+    <div class="plan-count pc-basic"><div class="plan-count-val" id="sc-pc-basic">0</div><div class="plan-count-lbl">Basic</div></div>
+    <div class="plan-count pc-mobile"><div class="plan-count-val" id="sc-pc-mobile">0</div><div class="plan-count-lbl">Mobile</div></div>
+    <div class="plan-count pc-free"><div class="plan-count-val" id="sc-pc-free">0</div><div class="plan-count-lbl">Free</div></div>
+  </div>
+
+  <!-- 3 col layout -->
+  <div class="three-col">
+
+    <!-- LEFT: Input -->
+    <div class="col-left">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;">
+        <div class="panel-head"><i class="fas fa-cookie-bite"></i> Check Cookies</div>
+        <div style="padding:1rem;display:flex;flex-direction:column;gap:.75rem;">
+          <div>
+            <div class="lbl">Paste Cookie (JSON or Netscape)</div>
+            <textarea
+              class="cookie-input"
+              id="singleInput"
+              placeholder=".netflix.com TRUE / TRUE 1234567890 NetflixId xxx&#10;.netflix.com TRUE / TRUE 1234567890 SecureNetflixId xxx&#10;&#10;— or paste JSON cookie array —"
+            ></textarea>
+          </div>
+          <div>
+            <div class="lbl">Or Upload File</div>
+            <div class="upload-drop" id="singleDrop">
+              <input type="file" id="singleFile" accept=".txt,.json" class="hidden">
+              <i class="fas fa-file-upload"></i>
+              <p>Drop file or click to browse</p>
+              <div class="file-name" id="singleFileName"></div>
+            </div>
+          </div>
+          <button class="btn-check" id="singleCheckBtn">
+            <i class="fas fa-search"></i> Check Cookie
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MIDDLE: Result -->
+    <div>
+      <div class="result-area" id="singleResult">
+        <div class="result-area-empty">
+          <i class="fas fa-cookie-bite" style="font-size:2rem;display:block;margin-bottom:.6rem;opacity:.15;color:var(--red)"></i>
+          Paste a cookie on the left and click <strong>Check Cookie</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Detail panels -->
+    <div id="singleRightPanel" class="hidden">
+      <div class="panel" style="margin-bottom:.8rem">
+        <div class="panel-head"><i class="fas fa-user-circle"></i> Account Details</div>
+        <div class="panel-body" id="singleDetailBody"></div>
+      </div>
+      <div class="panel" style="margin-bottom:.8rem">
+        <div class="panel-head"><i class="fas fa-sign-in-alt"></i> Login Details</div>
+        <div class="panel-body" id="singleLoginBody"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><i class="fas fa-key"></i> Cookie</div>
+        <div class="panel-body">
+          <div class="cookie-display" id="singleCookieDisplay"></div>
+          <button class="btn-copy" id="singleCopyBtn"><i class="fas fa-copy"></i> Copy Cookie</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ========== BULK CHECK PAGE ========== -->
+<div id="page-bulk" class="page">
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <div class="stat s-total"><div class="stat-val" id="bc-total">0</div><div class="stat-lbl">Total</div></div>
+    <div class="stat s-valid"><div class="stat-val" id="bc-valid">0</div><div class="stat-lbl">Valid</div></div>
+    <div class="stat s-free"><div class="stat-val" id="bc-free">0</div><div class="stat-lbl">Free</div></div>
+    <div class="stat s-onhold"><div class="stat-val" id="bc-onhold">0</div><div class="stat-lbl">On Hold</div></div>
+    <div class="stat s-broken"><div class="stat-val" id="bc-broken">0</div><div class="stat-lbl">Broken</div></div>
+    <div class="stat s-invalid"><div class="stat-val" id="bc-invalid">0</div><div class="stat-lbl">Invalid</div></div>
+    <div class="stat s-dup"><div class="stat-val" id="bc-dup">0</div><div class="stat-lbl">Duplicate</div></div>
+  </div>
+
+  <!-- Plan counts -->
+  <div class="plan-counts">
+    <div class="plan-count pc-premium"><div class="plan-count-val" id="bc-pc-premium">0</div><div class="plan-count-lbl">Premium</div></div>
+    <div class="plan-count pc-standard"><div class="plan-count-val" id="bc-pc-standard">0</div><div class="plan-count-lbl">Standard</div></div>
+    <div class="plan-count pc-basic"><div class="plan-count-val" id="bc-pc-basic">0</div><div class="plan-count-lbl">Basic</div></div>
+    <div class="plan-count pc-mobile"><div class="plan-count-val" id="bc-pc-mobile">0</div><div class="plan-count-lbl">Mobile</div></div>
+    <div class="plan-count pc-free"><div class="plan-count-val" id="bc-pc-free">0</div><div class="plan-count-lbl">Free</div></div>
+  </div>
+
+  <!-- Upload section -->
+  <div id="bulkUploadSection">
+    <div style="max-width:640px;margin:0 auto;padding:2rem 0">
+
+      <div id="bulkDrop" style="border:2px dashed rgba(229,9,20,.3);border-radius:12px;padding:2.5rem 1.5rem;text-align:center;cursor:pointer;transition:all .2s;background:rgba(229,9,20,.02)">
+        <input type="file" id="bulkFile" accept=".txt,.json,.zip" multiple class="hidden">
+        <i class="fas fa-cloud-upload-alt" style="font-size:2.5rem;color:var(--red);display:block;margin-bottom:.75rem"></i>
+        <div style="font-size:1rem;font-weight:700;margin-bottom:.35rem">Drop files here or click to browse</div>
+        <div style="font-size:.8rem;color:var(--muted)">Supports <strong style="color:#e5e5e5">.txt</strong>, <strong style="color:#e5e5e5">.json</strong>, <strong style="color:#e5e5e5">.zip</strong> &mdash; multiple files at once</div>
+      </div>
+
+      <!-- File list -->
+      <div id="bulkFileList" style="margin-top:.75rem;display:flex;flex-direction:column;gap:.4rem"></div>
+
+      <button class="btn-check" id="bulkStartBtn" disabled style="margin-top:.75rem">
+        <i class="fas fa-play"></i> Start Bulk Check
+      </button>
+    </div>
+  </div>
+
+  <!-- Progress + results (shown after start) -->
+  <div id="bulkProgressSection" class="hidden">
+    
+    <div style="display:grid;grid-template-columns:1fr 340px;gap:1rem">
+      <div>
+        <!-- Progress bar -->
+        <div class="panel" style="padding:.9rem 1.1rem;margin-bottom:1rem">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:.85rem;font-weight:600" id="bulkProgLabel">Checking...</span>
+            <button class="btn-stop" id="bulkStopBtn"><i class="fas fa-stop"></i> Stop</button>
+          </div>
+          <div class="prog-bar-outer"><div class="prog-bar-inner" id="bulkProgBar"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)">
+            <span id="bulkProgLeft">0 / 0</span><span id="bulkProgPct">0%</span>
+          </div>
+        </div>
+
+        <!-- Log + Chart -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+          <div class="log-box">
+            <div class="lbl" style="margin-bottom:.5rem">Live Log</div>
+            <div class="log-list" id="bulkLogList">
+              <div class="empty"><i class="fas fa-terminal"></i>Waiting...</div>
+            </div>
+          </div>
+          <div class="panel" style="padding:1rem;height:260px;display:flex;flex-direction:column;align-items:center;justify-content:center">
+            <div class="lbl" style="margin-bottom:.5rem;align-self:flex-start">Plan Breakdown</div>
+            <canvas id="bulkChart" style="max-height:190px"></canvas>
+            <div id="bulkChartEmpty" class="empty" style="padding:.5rem"><i class="fas fa-chart-pie"></i>No data</div>
+          </div>
+        </div>
+
+        <!-- Results table -->
+        <div class="panel">
+          <div class="panel-head">
+            <i class="fas fa-list"></i> Valid Accounts
+            <div class="ftabs" id="bulkFtabs" style="margin:0 0 0 auto">
+              <div class="ftab active" data-cat="all">All</div>
+            </div>
+          </div>
+          <div class="panel-body" style="padding:0">
+            <div class="tbl-wrap">
+              <table class="tbl">
+                <thead><tr>
+                  <th>#</th><th>Plan</th><th>Email</th><th>Country</th><th>Price</th><th>Next Billing</th><th>Actions</th>
+                </tr></thead>
+                <tbody id="bulkTbody">
+                  <tr><td colspan="7"><div class="empty"><i class="fas fa-inbox"></i>No valid accounts yet</div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: Account Detail -->
+      <div>
+        <div class="panel" id="bulkDetailBox" style="height:100%;display:flex;flex-direction:column">
+          <div class="panel-head"><i class="fas fa-info-circle"></i> Account Details</div>
+          <div class="panel-body" style="flex:1;overflow-y:auto">
+            <div class="empty"><i class="fas fa-hand-pointer"></i>Click a row to view details</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => { const d = document.createElement("div"); d.textContent = s || ""; return d.innerHTML; };
+
+const PLAN_COLORS = { premium:"#fbbf24", premium_extra:"#fb923c", standard:"#60a5fa", standard_with_ads:"#818cf8", basic:"#4ade80", mobile:"#f472b6", free:"#9ca3af", on_hold:"#a78bfa", unknown:"#6b7280" };
+const CHIP_CLASS  = { premium:"chip-premium", premium_extra:"chip-premium_extra", standard:"chip-standard", standard_with_ads:"chip-standard_with_ads", basic:"chip-basic", mobile:"chip-mobile", free:"chip-free", on_hold:"chip-on_hold", unknown:"chip-unknown" };
+
+// --- NAV ---
+function switchPage(p, el) {
+  document.querySelectorAll(".page").forEach(x => x.classList.remove("active"));
+  document.querySelectorAll(".nav-tab").forEach(x => x.classList.remove("active"));
+  $("page-" + p).classList.add("active");
+  el.classList.add("active");
+}
+
+// --- TOAST ---
+function showToast(title, sub, color) {
+  const c = $("toastWrap");
+  const t = document.createElement("div");
+  t.className = "toast";
+  t.style.borderLeftColor = color || "#22c55e";
+  t.innerHTML = `<div class="toast-ico" style="color:${color||"#22c55e"}"><i class="fas fa-check-circle"></i></div><div><div class="toast-title">${esc(title)}</div><div class="toast-sub">${esc(sub)}</div></div>`;
+  c.appendChild(t);
+  setTimeout(() => { t.classList.add("out"); setTimeout(() => t.remove(), 280); }, 3500);
+}
+
+// --- DROP ZONE SETUP ---
+function setupDrop(dropId, inputId, fileNameId, onFile) {
+  const drop = $(dropId), inp = $(inputId), fn = $(fileNameId);
+  drop.addEventListener("click", () => inp.click());
+  drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("drag"); });
+  drop.addEventListener("dragleave", () => drop.classList.remove("drag"));
+  drop.addEventListener("drop", e => { e.preventDefault(); drop.classList.remove("drag"); if (e.dataTransfer.files[0]) handle(e.dataTransfer.files[0]); });
+  inp.addEventListener("change", () => { if (inp.files[0]) handle(inp.files[0]); });
+  function handle(f) { fn.textContent = f.name; fn.style.display = "block"; onFile(f); }
+}
+
+// ========== SINGLE CHECK ==========
+const scStats = { total:0, valid:0, free:0, onhold:0, broken:0, invalid:0, err:0 };
+const scPlans = { premium:0, standard:0, basic:0, mobile:0, free:0 };
+
+function scUpdateUI() {
+  $("sc-total").textContent   = scStats.total;
+  $("sc-valid").textContent   = scStats.valid;
+  $("sc-free").textContent    = scStats.free;
+  $("sc-onhold").textContent  = scStats.onhold;
+  $("sc-broken").textContent  = scStats.broken;
+  $("sc-invalid").textContent = scStats.invalid;
+  $("sc-err").textContent     = scStats.err;
+  $("sc-pc-premium").textContent  = scPlans.premium;
+  $("sc-pc-standard").textContent = scPlans.standard;
+  $("sc-pc-basic").textContent    = scPlans.basic;
+  $("sc-pc-mobile").textContent   = scPlans.mobile;
+  $("sc-pc-free").textContent     = scPlans.free;
+}
+
+setupDrop("singleDrop", "singleFile", "singleFileName", f => {
+  const r = new FileReader();
+  r.onload = e => { $("singleInput").value = e.target.result; };
+  r.readAsText(f);
+});
+
+$("singleCheckBtn").addEventListener("click", async () => {
+  const cookie = $("singleInput").value.trim();
+  if (!cookie) return;
+
+  const btn = $("singleCheckBtn");
+  btn.disabled = true;
+  btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Checking...`;
+  $("singleRightPanel").classList.add("hidden");
+  $("singleResult").innerHTML = `<div style="padding:2rem;color:var(--muted)"><i class="fas fa-spinner fa-spin" style="font-size:1.5rem;display:block;margin-bottom:.6rem;color:var(--red)"></i>Checking...</div>`;
+
+  scStats.total++;
+
+  try {
+    const res = await fetch("/api/check/single", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cookie })
+    });
+    const d = await res.json();
+
+    if (!res.ok) {
+      $("singleResult").innerHTML = `<div style="color:#ef4444;padding:1rem;font-size:.85rem"><i class="fas fa-times-circle"></i> ${esc(d.detail || "Error")}</div>`;
+      scStats.invalid++; scUpdateUI();
+      showToast("Invalid", d.detail || "Cookie invalid", "#ef4444");
+
+    } else if (d.success) {
+      // Stats
+      if (d.on_hold) scStats.onhold++;
+      else if (!d.is_subscribed) { scStats.free++; scPlans.free++; }
+      else {
+        scStats.valid++;
+        const pk = d.plan_key || "";
+        if (pk.includes("premium")) scPlans.premium++;
+        else if (pk.includes("standard")) scPlans.standard++;
+        else if (pk === "basic") scPlans.basic++;
+        else if (pk === "mobile") scPlans.mobile++;
+      }
+      scUpdateUI();
+
+      // Result area - plan chip
+      const chipCls = CHIP_CLASS[d.plan_key] || "chip-unknown";
+      $("singleResult").innerHTML = `
+        <div style="margin-bottom:1rem">
+          <span class="chip ${chipCls}" style="font-size:.85rem;padding:.3rem .9rem">${esc(d.plan)}</span>
+          ${d.on_hold ? `<span style="margin-left:.5rem;font-size:.78rem;color:#a78bfa">On Hold</span>` : ""}
+        </div>
+        <div style="font-size:.82rem;color:var(--muted)">Account verified successfully</div>
+      `;
+
+      // Right panel - detail
+      const info = d.info || {};
+      const fields = [
+        ["Name", info.accountOwnerName], ["Email", info.email],
+        ["Country", info.countryOfSignup], ["Member Since", info.memberSince],
+        ["Plan", d.plan], ["Price", info.planPrice], ["Quality", info.videoQuality],
+        ["Max Streams", info.maxStreams], ["Next Billing", info.nextBillingDate],
+        ["Payment", info.paymentMethodType], ["Card", info.maskedCard],
+        ["Phone", info.phoneNumber], ["Extra Members", info.showExtraMemberSection],
+        ["Email Verified", info.emailVerified], ["Membership", info.membershipStatus],
+        ["Hold Status", info.holdStatus], ["Profiles", info.profiles]
+      ].filter(([, v]) => v);
+
+      $("singleDetailBody").innerHTML = fields.length
+        ? fields.map(([k, v]) => `<div class="detail-row"><span class="detail-key">${esc(k)}</span><span class="detail-val">${esc(String(v))}</span></div>`).join("")
+        : `<div style="color:var(--muted);font-size:.82rem">No details available</div>`;
+
+      // Login details
+      const nft = d.nftoken;
+      if (nft && nft.token) {
+        const pc  = "https://netflix.com/?nftoken=" + nft.token;
+        const mob = "https://netflix.com/unsupported?nftoken=" + nft.token;
+        $("singleLoginBody").innerHTML = `
+          <div class="login-box">
+            <div class="login-box-title">NFToken Links</div>
+            <div class="login-link"><i class="fas fa-desktop"></i><a href="${pc}" target="_blank">${pc}</a></div>
+            <div class="login-link"><i class="fas fa-mobile-alt"></i><a href="${mob}" target="_blank">${mob}</a></div>
+          </div>`;
+      } else {
+        $("singleLoginBody").innerHTML = `<div style="color:var(--muted);font-size:.82rem">NFToken not available (disabled in config or free account)</div>`;
+      }
+
+      // Cookie
+      $("singleCookieDisplay").textContent = d.netscape_text || d.cookie_content || "";
+      $("singleCopyBtn").onclick = () => {
+        navigator.clipboard.writeText(d.cookie_content || d.netscape_text || "")
+          .then(() => showToast("Copied!", "Cookie copied to clipboard", "#3b82f6"));
+      };
+
+      $("singleRightPanel").classList.remove("hidden");
+      showToast(d.plan, info.email || info.countryOfSignup || "Valid account");
+
+    } else {
+      const reasons = { retryable:"Network/proxy error", failed:"Cookie expired or invalid", incomplete_info:"Incomplete response from Netflix" };
+      const msg = reasons[d.reason] || d.reason || "Unknown error";
+      $("singleResult").innerHTML = `<div style="color:#f59e0b;padding:1rem;font-size:.85rem"><i class="fas fa-exclamation-triangle"></i> ${esc(msg)}</div>`;
+      if (d.reason === "retryable") scStats.broken++; else scStats.invalid++;
+      scUpdateUI();
+      showToast("Failed", msg, "#ef4444");
+    }
+  } catch (e) {
+    $("singleResult").innerHTML = `<div style="color:#ef4444;padding:1rem;font-size:.85rem"><i class="fas fa-times-circle"></i> Network error: ${esc(e.message)}</div>`;
+    scStats.err++; scUpdateUI();
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<i class="fas fa-search"></i> Check Cookie`;
+  }
+});
+
+
+// ========== BULK CHECK ==========
+let bulkSessionId = null, bulkWs = null, bulkChart = null;
+let bulkAccounts = [], bulkFilterCat = "all", bulkPlanCounts = {};
+let bulkFiles = [];
+
+// Drop zone setup for bulk (multi-file + zip)
+const bulkDrop = $("bulkDrop");
+const bulkFileInput = $("bulkFile");
+
+bulkDrop.addEventListener("click", () => bulkFileInput.click());
+bulkDrop.addEventListener("dragover", e => { e.preventDefault(); bulkDrop.style.borderColor = "var(--red)"; bulkDrop.style.background = "rgba(229,9,20,.07)"; });
+bulkDrop.addEventListener("dragleave", () => { bulkDrop.style.borderColor = ""; bulkDrop.style.background = ""; });
+bulkDrop.addEventListener("drop", e => {
+  e.preventDefault();
+  bulkDrop.style.borderColor = "";
+  bulkDrop.style.background = "";
+  addBulkFiles(Array.from(e.dataTransfer.files));
+});
+bulkFileInput.addEventListener("change", () => {
+  addBulkFiles(Array.from(bulkFileInput.files));
+  bulkFileInput.value = "";
+});
+
+function addBulkFiles(newFiles) {
+  const valid = newFiles.filter(f => /\.(txt|json|zip)$/i.test(f.name));
+  valid.forEach(f => {
+    if (!bulkFiles.find(x => x.name === f.name && x.size === f.size)) {
+      bulkFiles.push(f);
+    }
+  });
+  renderBulkFileList();
+  $("bulkStartBtn").disabled = bulkFiles.length === 0;
+}
+
+function renderBulkFileList() {
+  const list = $("bulkFileList");
+  if (!bulkFiles.length) { list.innerHTML = ""; return; }
+  list.innerHTML = bulkFiles.map((f, i) => {
+    const icon = f.name.endsWith(".zip") ? "fa-file-zipper" : "fa-file-alt";
+    const color = f.name.endsWith(".zip") ? "#f59e0b" : "#60a5fa";
+    const size = f.size > 1024*1024 ? (f.size/1024/1024).toFixed(1)+" MB" : (f.size/1024).toFixed(1)+" KB";
+    return `<div style="display:flex;align-items:center;gap:.6rem;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:.5rem .75rem;font-size:.82rem">
+      <i class="fas ${icon}" style="color:${color}"></i>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.name)}</span>
+      <span style="color:var(--muted);font-size:.72rem;flex-shrink:0">${size}</span>
+      <button onclick="removeBulkFile(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:0;font-size:.8rem;flex-shrink:0"><i class="fas fa-times"></i></button>
+    </div>`;
+  }).join("");
+}
+
+function removeBulkFile(i) {
+  bulkFiles.splice(i, 1);
+  renderBulkFileList();
+  $("bulkStartBtn").disabled = bulkFiles.length === 0;
+}
+
+$("bulkStartBtn").addEventListener("click", async () => {
+  if (!bulkFiles.length) return;
+  const btn = $("bulkStartBtn");
+  btn.disabled = true;
+  btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Starting...`;
+
+  const fd = new FormData();
+  bulkFiles.forEach(f => fd.append("files", f));
+
+  try {
+    const res = await fetch("/api/check", { method: "POST", body: fd });
+    const d = await res.json();
+    if (!res.ok) {
+      alert(d.detail);
+      btn.disabled = false;
+      btn.innerHTML = `<i class="fas fa-play"></i> Start Bulk Check`;
+      return;
+    }
+    bulkSessionId = d.session_id;
+    $("bc-total").textContent = d.total_cookies;
+    $("bulkProgLeft").textContent = "0 / " + d.total_cookies;
+    $("bulkProgLabel").textContent = `Checking ${d.total_cookies} cookies from ${d.file_count} file(s)...`;
+    $("bulkUploadSection").classList.add("hidden");
+    $("bulkProgressSection").classList.remove("hidden");
+    connectBulkWS();
+  } catch (e) {
+    alert("Error: " + e.message);
+    btn.disabled = false;
+    btn.innerHTML = `<i class="fas fa-play"></i> Start Bulk Check`;
+  }
+});
+
+function connectBulkWS() {
+  const proto = location.protocol === "https:" ? "wss:" : "ws:";
+  const wsUrl = `${proto}//${location.host}/ws/${bulkSessionId}`;
+  console.log("[WS] Connecting to:", wsUrl);
+  bulkWs = new WebSocket(wsUrl);
+  bulkWs.onopen  = () => { 
+    console.log("[WS] Connected successfully");
+    $("wsDot").classList.add("on"); 
+    $("wsLabel").textContent = "Connected"; 
+  };
+  bulkWs.onclose = (e) => { 
+    console.log("[WS] Connection closed:", e.code, e.reason);
+    $("wsDot").classList.remove("on"); 
+    $("wsLabel").textContent = "Offline"; 
+  };
+  bulkWs.onerror = (e) => {
+    console.error("[WS] Connection error:", e);
+  };
+  bulkWs.onmessage = e => {
+    const m = JSON.parse(e.data);
+    console.log("[WS] Message received:", m.type, m.data);
+    if (m.type === "progress")     updateBulkProgress(m.data);
+    else if (m.type === "valid_account") addBulkAccount(m.data);
+    else if (m.type === "complete")    onBulkComplete(m.data);
+    else if (m.type === "stopped")    onBulkStopped();
+  };
+  setInterval(() => bulkWs && bulkWs.readyState === 1 && bulkWs.send("ping"), 25000);
+}
+
+function updateBulkProgress(d) {
+  console.log("[UI] Updating progress:", d);
+  $("bc-valid").textContent   = d.valid;
+  $("bc-invalid").textContent = d.invalid;
+  $("bc-broken").textContent  = d.broken;
+  $("bc-onhold").textContent  = d.on_hold  || 0;
+  $("bc-dup").textContent     = d.duplicate || 0;
+  $("bulkProgBar").style.width = d.percentage + "%";
+  $("bulkProgLeft").textContent = d.checked + " / " + d.total;
+  $("bulkProgPct").textContent  = d.percentage + "%";
+}
+
+function addBulkAccount(data) {
+  const { plan, category, account } = data;
+  const info = account.info || {};
+  bulkAccounts.push({ plan, category, account, info });
+  bulkPlanCounts[category] = (bulkPlanCounts[category] || 0) + 1;
+  const pk = category.includes("premium") ? "premium" : category.includes("standard") ? "standard" : ["basic","mobile","free"].includes(category) ? category : null;
+  if (pk) { const el = $("bc-pc-" + pk); if (el) el.textContent = (parseInt(el.textContent) || 0) + 1; }
+  addBulkLog("hit", plan, info.email || info.countryOfSignup || "");
+  addBulkFilterTab(category, plan);
+  updateBulkChart();
+  renderBulkTable();
+  showToast(plan, info.email || info.countryOfSignup || "Valid account");
+}
+
+function addBulkLog(type, label, detail) {
+  const list = $("bulkLogList"), empty = list.querySelector(".empty");
+  if (empty) empty.remove();
+  const d = document.createElement("div");
+  d.className = "log-item " + type;
+  const icons = { hit:"fa-check-circle", fail:"fa-times-circle", brok:"fa-exclamation-triangle", dup:"fa-copy" };
+  d.innerHTML = `<i class="fas ${icons[type]||"fa-circle"}"></i><span style="font-weight:600">${esc(label)}</span>${detail ? `<span style="color:var(--muted);margin-left:auto;font-size:.7rem">${esc(detail)}</span>` : ""}`;
+  list.appendChild(d);
+  list.scrollTop = list.scrollHeight;
+}
+
+const bulkTabsAdded = new Set(["all"]);
+function addBulkFilterTab(cat, plan) {
+  if (bulkTabsAdded.has(cat)) return;
+  bulkTabsAdded.add(cat);
+  const t = document.createElement("div");
+  t.className = "ftab"; t.dataset.cat = cat; t.textContent = plan;
+  t.addEventListener("click", () => { bulkFilterCat = cat; document.querySelectorAll("#bulkFtabs .ftab").forEach(x => x.classList.toggle("active", x.dataset.cat === cat)); renderBulkTable(); });
+  $("bulkFtabs").appendChild(t);
+}
+document.querySelector("#bulkFtabs .ftab[data-cat=all]").addEventListener("click", () => {
+  bulkFilterCat = "all";
+  document.querySelectorAll("#bulkFtabs .ftab").forEach(x => x.classList.toggle("active", x.dataset.cat === "all"));
+  renderBulkTable();
+});
+
+function renderBulkTable() {
+  const rows = bulkFilterCat === "all" ? bulkAccounts : bulkAccounts.filter(a => a.category === bulkFilterCat);
+  const tbody = $("bulkTbody");
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><i class="fas fa-inbox"></i>No accounts in this category</div></td></tr>`; return; }
+  tbody.innerHTML = rows.map((r, i) => {
+    const info = r.info;
+    const chipCls = CHIP_CLASS[r.category] || "chip-unknown";
+    const originalIdx = bulkAccounts.indexOf(r); // Get original index from bulkAccounts
+    return `<tr class="clickable-row" data-original-idx="${originalIdx}">
+      <td style="color:var(--muted)">${i+1}</td>
+      <td><span class="chip ${chipCls}">${esc(r.plan)}</span></td>
+      <td style="color:#aaa">${esc(info.email||"—")}</td>
+      <td>${esc(info.countryOfSignup||"—")}</td>
+      <td>${esc(info.planPrice||"—")}</td>
+      <td>${esc(info.nextBillingDate||"—")}</td>
+      <td><div class="act-btns">
+        <button class="btn-ico" title="Copy" onclick="event.stopPropagation(); bulkCopy(${i})"><i class="fas fa-copy"></i></button>
+        <button class="btn-ico" title="Download" onclick="event.stopPropagation(); bulkDl('${r.category}')"><i class="fas fa-download"></i></button>
+      </div></td>
+    </tr>`;
+  }).join("");
+  
+  // Add click handlers to rows
+  tbody.querySelectorAll(".clickable-row").forEach(row => {
+    row.addEventListener("click", function() {
+      const idx = parseInt(this.dataset.originalIdx);
+      showBulkAccountDetail(idx);
+    });
+  });
+}
+
+function showBulkAccountDetail(idx) {
+  const item = bulkAccounts[idx]; // Use original bulkAccounts array
+  if (!item) return;
+  
+  const { account, info, plan, category } = item;
+  const chipCls = CHIP_CLASS[category] || "chip-unknown";
+  
+  // Build Account Details section (matching single checker format)
+  const fields = [
+    ["Name", info.accountOwnerName], ["Email", info.email],
+    ["Country", info.countryOfSignup], ["Member Since", info.memberSince],
+    ["Plan", plan], ["Price", info.planPrice], ["Quality", info.videoQuality],
+    ["Max Streams", info.maxStreams], ["Next Billing", info.nextBillingDate],
+    ["Payment", info.paymentMethodType], ["Card", info.maskedCard],
+    ["Phone", info.phoneNumber], ["Extra Members", info.showExtraMemberSection],
+    ["Email Verified", info.emailVerified], ["Membership", info.membershipStatus],
+    ["Hold Status", info.holdStatus], ["Profiles", info.profiles]
+  ].filter(([, v]) => v);
+
+  const accountDetailsHTML = fields.length
+    ? fields.map(([k, v]) => `<div class="detail-row"><span class="detail-key">${esc(k)}</span><span class="detail-val">${esc(String(v))}</span></div>`).join("")
+    : `<div style="color:var(--muted);font-size:.82rem">No details available</div>`;
+  
+  // Build Login Details section
+  const nft = account.nftoken;
+  let loginDetailsHTML = "";
+  if (nft && nft.token) {
+    const pc  = "https://netflix.com/?nftoken=" + nft.token;
+    const mob = "https://netflix.com/unsupported?nftoken=" + nft.token;
+    loginDetailsHTML = `
+      <div class="login-box">
+        <div class="login-box-title">NFToken Links</div>
+        <div class="login-link"><i class="fas fa-desktop"></i><a href="${pc}" target="_blank">${pc}</a></div>
+        <div class="login-link"><i class="fas fa-mobile-alt"></i><a href="${mob}" target="_blank">${mob}</a></div>
+      </div>`;
+  } else {
+    loginDetailsHTML = `<div style="color:var(--muted);font-size:.82rem">NFToken not available (disabled in config or free account)</div>`;
+  }
+  
+  // Build Cookie section - use only the raw cookie in Netscape format
+  const netscapeCookie = account.cookie || "";
+  
+  // Update the detail box with 3 separate sections
+  const detailBox = $("bulkDetailBox");
+  detailBox.innerHTML = `
+    <!-- Account Details Section -->
+    <div class="detail-section">
+      <div class="panel-head"><i class="fas fa-user-circle"></i> Account Details</div>
+      <div class="panel-body" style="padding:1rem">
+        ${accountDetailsHTML}
+      </div>
+    </div>
+    
+    <!-- Login Details Section -->
+    <div class="detail-section" style="margin-top:1rem">
+      <div class="panel-head"><i class="fas fa-sign-in-alt"></i> Login Details</div>
+      <div class="panel-body" style="padding:1rem">
+        ${loginDetailsHTML}
+      </div>
+    </div>
+    
+    <!-- Cookie Section -->
+    <div class="detail-section" style="margin-top:1rem">
+      <div class="panel-head"><i class="fas fa-cookie-bite"></i> Cookie</div>
+      <div class="panel-body" style="padding:1rem">
+        <button class="btn-copy" style="width:100%;margin-bottom:.5rem" onclick="navigator.clipboard.writeText(\`${esc(netscapeCookie).replace(/`/g, '\\`')}\`).then(() => showToast('Copied!', 'Cookie copied', '#3b82f6'))">
+          <i class="fas fa-copy"></i> Copy Cookie
+        </button>
+        <pre class="code-box" style="font-size:.7rem;max-height:150px;overflow-y:auto;white-space:pre-wrap;word-break:break-all">${esc(netscapeCookie)}</pre>
+      </div>
+    </div>
+  `;
+}
+
+function bulkCopy(idx) {
+  const rows = bulkFilterCat === "all" ? bulkAccounts : bulkAccounts.filter(a => a.category === bulkFilterCat);
+  const content = rows[idx]?.account?.cookie_content || rows[idx]?.account?.cookie || "";
+  navigator.clipboard.writeText(content).then(() => showToast("Copied!", "Cookie copied", "#3b82f6"));
+}
+async function bulkDl(cat) {
+  if (!bulkSessionId) return;
+  const r = await fetch(`/api/session/${bulkSessionId}/download/${cat}`);
+  if (!r.ok) { alert("Download failed"); return; }
+  const blob = await r.blob(), url = URL.createObjectURL(blob), a = document.createElement("a");
+  a.href = url; a.download = cat + "_" + bulkSessionId + ".txt"; a.click(); URL.revokeObjectURL(url);
+}
+
+function updateBulkChart() {
+  const labels = Object.keys(bulkPlanCounts);
+  const values = labels.map(k => bulkPlanCounts[k]);
+  const colors = labels.map(k => PLAN_COLORS[k] || "#555");
+  $("bulkChartEmpty").classList.add("hidden");
+  if (!bulkChart) {
+    bulkChart = new Chart($("bulkChart"), { type:"doughnut", data:{ labels, datasets:[{ data:values, backgroundColor:colors, borderColor:"rgba(0,0,0,0.4)", borderWidth:2, hoverOffset:5 }] }, options:{ responsive:true, plugins:{ legend:{ position:"bottom", labels:{ color:"#888", boxWidth:10, padding:8, font:{size:10} } } } } });
+  } else {
+    bulkChart.data.labels = labels;
+    bulkChart.data.datasets[0].data = values;
+    bulkChart.data.datasets[0].backgroundColor = colors;
+    bulkChart.update();
+  }
+}
+
+function onBulkComplete(d) {
+  $("bulkProgLabel").textContent = "Done!";
+  $("bulkStopBtn").disabled = true;
+  $("bulkStopBtn").innerHTML = `<i class="fas fa-check"></i> Done`;
+  updateBulkProgress(d.progress);
+  addBulkLog("hit", "Complete", d.progress.valid + " valid found");
+}
+function onBulkStopped() {
+  $("bulkProgLabel").textContent = "Stopped";
+  $("bulkStopBtn").disabled = true;
+  $("bulkStopBtn").innerHTML = `<i class="fas fa-ban"></i> Stopped`;
+  addBulkLog("fail", "Stopped by user", "");
+}
+$("bulkStopBtn").addEventListener("click", async () => {
+  if (!bulkSessionId) return;
+  await fetch(`/api/session/${bulkSessionId}/stop`, { method: "POST" }).catch(() => {});
+});
+</script>
+</body>
+</html>
